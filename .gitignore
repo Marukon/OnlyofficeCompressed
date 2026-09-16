@@ -2,5 +2,7 @@ node_modules/
 .DS_Store
 Thumbs.db
 *.log
+scripts/*.png
 .vscode/
 .idea/
+

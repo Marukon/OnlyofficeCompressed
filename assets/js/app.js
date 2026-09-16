@@ -503,8 +503,8 @@ class AppManager {
       const win = iframe.contentWindow;
       if (!win) return;
 
-      const xhr = createXHRProxy(win.XMLHttpRequest);
-      const fetchProxy = createFetchProxy(win);
+      const xhr = createXHRProxy(win.XMLHttpRequest, win);
+      const fetchProxy = createFetchProxy(win, win);
       const _Worker = win.Worker;
 
       xhr.use((req) => this.server.handleRequest(req));

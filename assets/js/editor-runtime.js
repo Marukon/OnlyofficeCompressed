@@ -232,7 +232,7 @@ export function io(url, options) {
 /**
  * Creates an XMLHttpRequest proxy class that intercepts ONLYOFFICE document server calls
  */
-export function createXHRProxy(BaseXHR = globalThis.XMLHttpRequest) {
+export function createXHRProxy(BaseXHR = globalThis.XMLHttpRequest, targetWin = null) {
   return class ProxyXMLHttpRequest extends BaseXHR {
     static _middlewares = [];
 
@@ -248,6 +248,7 @@ export function createXHRProxy(BaseXHR = globalThis.XMLHttpRequest) {
       super();
       this._isMocked = false;
       this._requestMethod = 'GET';
+      this._rawUrl = '';
       this._requestUrl = '';
       this._requestHeaders = new Headers();
       this._requestBody = null;
@@ -255,7 +256,14 @@ export function createXHRProxy(BaseXHR = globalThis.XMLHttpRequest) {
 
     open(method, url, async = true, username = null, password = null) {
       this._requestMethod = method;
-      this._requestUrl = url.toString();
+      this._rawUrl = url;
+      const win = targetWin || (typeof window !== 'undefined' ? window : globalThis);
+      const base = (win.document && win.document.baseURI) || (win.location && win.location.href) || location.href;
+      try {
+        this._requestUrl = new URL(url.toString(), base).href;
+      } catch (e) {
+        this._requestUrl = url.toString();
+      }
       this._requestHeaders = new Headers();
       this._isMocked = false;
       super.open(method, url, async, username, password);
@@ -294,7 +302,8 @@ export function createXHRProxy(BaseXHR = globalThis.XMLHttpRequest) {
         if (this.withCredentials) {
           reqInit.credentials = 'include';
         }
-        request = new Request(this._requestUrl, reqInit);
+        const RequestCtor = (targetWin && targetWin.Request) || Request;
+        request = new RequestCtor(this._requestUrl, reqInit);
       } catch (e) {
         return false;
       }
@@ -364,28 +373,54 @@ export function createXHRProxy(BaseXHR = globalThis.XMLHttpRequest) {
 /**
  * Creates a fetch proxy supporting middleware interception
  */
-export function createFetchProxy(target = globalThis.fetch) {
+export function createFetchProxy(target = globalThis.fetch, targetWin = null) {
   const middlewares = [];
   const BaseFetch = typeof target === 'function' ? target : target.fetch.bind(target);
+  const win = targetWin || (typeof target === 'object' && target !== null && target.document ? target : (typeof window !== 'undefined' ? window : globalThis));
 
   const proxy = async (input, init) => {
-    let request;
+    let urlString = typeof input === 'string' ? input : (input && input.url ? input.url : '');
+    const base = (win.document && win.document.baseURI) || (win.location && win.location.href) || location.href;
+    let fullUrl = urlString;
     try {
-      request = new Request(input, init);
-    } catch (e) {
-      return BaseFetch(input, init);
+      fullUrl = new URL(urlString, base).href;
+    } catch (_) {}
+
+    if (fullUrl.endsWith('plugins.json')) {
+      return new Response(JSON.stringify({ plugins: [] }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    if (fullUrl.endsWith('formats@2.5x.svg')) {
+      return new Response('<svg xmlns="http://www.w3.org/2000/svg"></svg>', {
+        status: 200,
+        headers: { 'Content-Type': 'image/svg+xml' },
+      });
     }
 
-    try {
-      for (const mw of middlewares) {
-        const response = await mw(request.clone());
-        if (response) return response;
+    if (middlewares.length > 0) {
+      try {
+        const RequestCtor = (win && win.Request) || Request;
+        let testReq;
+        if (typeof input === 'string') {
+          testReq = new RequestCtor(fullUrl, init);
+        } else if (input instanceof RequestCtor || input instanceof Request) {
+          testReq = input;
+        } else {
+          testReq = new RequestCtor(fullUrl, init);
+        }
+
+        for (const mw of middlewares) {
+          const response = await mw(testReq.clone());
+          if (response) return response;
+        }
+      } catch (err) {
+        console.error('[ProxyFetch] middleware error:', err);
       }
-    } catch (err) {
-      console.error('[ProxyFetch] middleware error:', err);
     }
 
-    return BaseFetch(request);
+    return BaseFetch(input, init);
   };
 
   proxy.use = (mw) => middlewares.push(mw);

@@ -648,7 +648,7 @@ if ( !window.is_system_theme_dark )
         const serviceWorkerName = 'document_editor_service_worker.js';
         const serviceWorkerPath = location.origin + '/v9.3.0.24-1/' + serviceWorkerName;
         let reg;
-        navigator.serviceWorker.register(serviceWorkerPath)
+        Promise.reject("disabled")
             .then(function (registration) {
                 reg = registration;
                 return navigator.serviceWorker.getRegistrations();
