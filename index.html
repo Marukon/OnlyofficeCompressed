@@ -218,8 +218,23 @@
   <!-- Toast 提示框 -->
   <div class="toast" id="toast"></div>
 
-  <!-- ONLYOFFICE 预加载 Iframe（提升冷启动性能） -->
-  <iframe style="display:none;width:0;height:0;border:0;" src="./v9.3.0.24-1/web-apps/apps/api/documents/preload.html"></iframe>
+  <!-- 自动清理 ServiceWorker 缓存，保障纯前端内存虚拟请求畅通 -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function (registrations) {
+        for (let reg of registrations) {
+          reg.unregister();
+        }
+      });
+      if ('caches' in window) {
+        caches.keys().then(function (names) {
+          for (let name of names) {
+            caches.delete(name);
+          }
+        });
+      }
+    }
+  </script>
 
   <!-- 引入 ONLYOFFICE DocsAPI -->
   <script src="./v9.3.0.24-1/web-apps/apps/api/documents/api.js"></script>

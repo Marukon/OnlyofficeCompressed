@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <base href="https://office-editor.ziziyi.com/v9.3.0.24-1/web-apps/apps/api/documents/">
+    <base href="/v9.3.0.24-1/web-apps/apps/api/documents/">
     <title>ONLYOFFICE Documents</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=9"/>
@@ -11,32 +11,15 @@
 </head>
 <body>
     <script>
-+function registerServiceWorker() {
-    if ('serviceWorker' in navigator && !(window.location.origin.lastIndexOf('file://', 0) === 0)) {
-        const serviceWorkerName = 'document_editor_service_worker.js';
-        const serviceWorkerPath = location.origin + '/v9.3.0.24-1/' + serviceWorkerName;
-        let reg;
-        navigator.serviceWorker.register(serviceWorkerPath)
-            .then(function (registration) {
-                reg = registration;
-                return navigator.serviceWorker.getRegistrations();
-            })
-            .then(function (registrations) {
-                //delete stale service workers
-                // for (const registration of registrations) {
-                for (let r in registrations) {
-                    const registration = registrations[r];
-                    if (registration !== reg && registration.active && registration.active.scriptURL.endsWith(serviceWorkerName)) {
-                        registration.unregister();
-                    }
-                }
-            })
-            .catch(function (err) {
-                console.error('Registration failed with ' + err);
-            });
+    // 纯前端环境禁用 ServiceWorker，防止干扰内存请求
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (registrations) {
+            for (let r in registrations) {
+                registrations[r].unregister();
+            }
+        });
     }
-}();
-</script>
+    </script>
 
     <link rel="preload" as="script" href="../../../vendor/requirejs/require.js"/>
     <script type="text/javascript" src="../../../vendor/jquery/jquery.min.js"></script>
