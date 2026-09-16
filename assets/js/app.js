@@ -70,58 +70,6 @@ function formatDateTime(timestamp) {
   });
 }
 
-// 预置默认文档（完全还原用户界面的最近文档种子）
-const DEFAULT_DOC_SEEDS = [
-  {
-    id: 'seed-1',
-    title: '未命名1_加水印(1).pdf',
-    fileType: 'pdf',
-    size: 27720,
-    updatedAt: new Date('2025-08-21T20:59:13').getTime(),
-    template: 'emptyPdf',
-  },
-  {
-    id: 'seed-2',
-    title: '新建Word文档(24)(1).pdf',
-    fileType: 'pdf',
-    size: 5048,
-    updatedAt: new Date('2025-08-22T01:57:54').getTime(),
-    template: 'emptyPdf',
-  },
-  {
-    id: 'seed-3',
-    title: '未命名1_加水印 (1) (6).pdf',
-    fileType: 'pdf',
-    size: 9,
-    updatedAt: new Date('2025-08-21T23:28:05').getTime(),
-    template: 'emptyPdf',
-  },
-  {
-    id: 'seed-4',
-    title: '新建PDF文档(1).pdf',
-    fileType: 'pdf',
-    size: 0,
-    updatedAt: new Date('2025-08-21T23:41:32').getTime(),
-    template: 'emptyPdf',
-  },
-  {
-    id: 'seed-5',
-    title: '新建PDF文档.pdf',
-    fileType: 'pdf',
-    size: 0,
-    updatedAt: new Date('2025-08-21T23:41:23').getTime(),
-    template: 'emptyPdf',
-  },
-  {
-    id: 'seed-6',
-    title: '新建Word文档(16).docx',
-    fileType: 'docx',
-    size: 0,
-    updatedAt: new Date('2025-08-21T23:28:37').getTime(),
-    template: 'emptyDocx',
-  },
-];
-
 class AppManager {
   constructor() {
     this.server = new EditorServer({
@@ -279,29 +227,38 @@ class AppManager {
   }
 
   /**
-   * 初始化最近文档（若首次进入数据库为空，写入默认预置项）
+   * 处理编辑器保存回调，持久化更新至 IndexedDB
+   */
+  async handleDocumentSaved(doc) {
+    try {
+      console.log('[AppManager] 收到文档保存通知:', doc.title);
+      await docDB.saveDocument({
+        id: this.activeDocId || doc.id,
+        title: doc.title,
+        fileType: doc.fileType,
+        size: doc.data ? doc.data.byteLength : 0,
+        updatedAt: Date.now(),
+        createdAt: Date.now(),
+        data: doc.data,
+      });
+      this.setSaveStatus(true);
+      this.showToast('文档已自动保存到本地库');
+    } catch (e) {
+      console.error('[AppManager] handleDocumentSaved 失败:', e);
+    }
+  }
+
+  /**
+   * 初始化最近文档（默认为空，清理历史预置种子数据）
    */
   async initRecentDocuments() {
     try {
       let docs = await docDB.getAllDocuments();
-      if (docs.length === 0) {
-        // 写入初始模拟/模板种子
-        for (const seed of DEFAULT_DOC_SEEDS) {
-          let binData = null;
-          if (seed.template === 'emptyDocx') {
-            binData = Uint8Array.from(emptyDocx, (v) => v.charCodeAt(0)).buffer;
-          } else if (seed.template === 'emptyPdf') {
-            binData = Uint8Array.from(emptyPdf, (v) => v.charCodeAt(0)).buffer;
-          }
-          await docDB.saveDocument({
-            id: seed.id,
-            title: seed.title,
-            fileType: seed.fileType,
-            size: seed.size,
-            updatedAt: seed.updatedAt,
-            createdAt: seed.updatedAt,
-            data: binData,
-          });
+      // 清除历史测试种子数据（如以 seed- 开头的默认数据）
+      const seeds = docs.filter((d) => d.id && String(d.id).startsWith('seed-'));
+      if (seeds.length > 0) {
+        for (const s of seeds) {
+          await docDB.deleteDocument(s.id);
         }
         docs = await docDB.getAllDocuments();
       }

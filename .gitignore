@@ -4,5 +4,5 @@ Thumbs.db
 *.log
 scripts/*.png
 .vscode/
-.idea/
-
+__pycache__/
+scripts/test_empty_list.py
