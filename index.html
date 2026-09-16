@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Office文档管理器 - 纯前端极速离线办公套件</title>
+  <link rel="icon" type="image/x-icon" href="./favicon.ico">
+  <link rel="stylesheet" href="./assets/css/style.css">
+</head>
+<body>
+
+  <!-- 顶部主标题区域 -->
+  <header class="header-container">
+    <div class="header-title-wrap">
+      <svg viewBox="0 0 24 24">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 4h7v5h5v11H6V4z"/>
+        <path d="M8 12h8v2H8zm0 4h8v2H8z"/>
+      </svg>
+      <span>Office文档管理器</span>
+    </div>
+    <div class="header-subtitle">创建、打开和管理您的办公文档</div>
+  </header>
+
+  <!-- 主内容白色卡片容器 -->
+  <main class="main-wrapper" id="main-wrapper">
+
+    <!-- 1. 新建文档栏目 -->
+    <section class="section-container">
+      <div class="section-title">
+        <svg viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" fill="#5b5ee8"/>
+          <path d="M12 7v10M7 12h10" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+        <span>新建文档</span>
+      </div>
+
+      <div class="create-grid">
+        <!-- Word -->
+        <div class="create-card card-word" data-type="docx" title="创建 Word (.docx) 文档">
+          <div class="card-icon">
+            <svg viewBox="0 0 40 40" width="44" height="44" fill="none">
+              <rect width="40" height="40" rx="8" fill="#2563eb"/>
+              <path d="M11 13h4.2l3 10.5 3-10.5h4.2l3.4 14h-3.6l-1.8-8.5-2.9 8.5h-3.8l-2.9-8.5-1.8 8.5H8.6L11 13z" fill="#ffffff"/>
+            </svg>
+          </div>
+          <div class="card-title">Word文档</div>
+          <div class="card-desc">创建新的Word文档</div>
+        </div>
+
+        <!-- Excel -->
+        <div class="create-card card-excel" data-type="xlsx" title="创建 Excel (.xlsx) 表格">
+          <div class="card-icon">
+            <svg viewBox="0 0 40 40" width="44" height="44" fill="none">
+              <rect width="40" height="40" rx="8" fill="#16a34a"/>
+              <path d="M12 13h4.5l3.5 6.2 3.5-6.2H28l-5.8 8.5 6 8.5h-4.6L20 23.5l-3.6 5.5H12l6-8.5L12 13z" fill="#ffffff"/>
+            </svg>
+          </div>
+          <div class="card-title">Excel表格</div>
+          <div class="card-desc">创建新的Excel表格</div>
+        </div>
+
+        <!-- PowerPoint -->
+        <div class="create-card card-ppt" data-type="pptx" title="创建 PowerPoint (.pptx) 演示文稿">
+          <div class="card-icon">
+            <svg viewBox="0 0 40 40" width="44" height="44" fill="none">
+              <rect width="40" height="40" rx="8" fill="#ea580c"/>
+              <path d="M13 13h7.5c3.6 0 6 2 6 5s-2.4 5-6 5H17v6h-4V13zm4 3.5v3h3.5c1.4 0 2.2-.6 2.2-1.5s-.8-1.5-2.2-1.5H17z" fill="#ffffff"/>
+            </svg>
+          </div>
+          <div class="card-title">PowerPoint演示</div>
+          <div class="card-desc">创建新的PPT演示文稿</div>
+        </div>
+
+        <!-- PDF -->
+        <div class="create-card card-pdf" data-type="pdf" title="创建 PDF (.pdf) 文档">
+          <div class="card-icon">
+            <svg viewBox="0 0 40 40" width="44" height="44" fill="none">
+              <rect width="40" height="40" rx="8" fill="#dc2626"/>
+              <path d="M12 13h10.5c3.2 0 5.5 1.8 5.5 4.5s-2.3 4.5-5.5 4.5H16v7h-4V13zm4 3.2v3.1h6.2c1.2 0 2-.6 2-1.55s-.8-1.55-2-1.55H16z" fill="#ffffff"/>
+              <circle cx="28" cy="27" r="2" fill="#ffffff"/>
+            </svg>
+          </div>
+          <div class="card-title">PDF文档</div>
+          <div class="card-desc">创建新的PDF文档</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. 打开文档栏目 -->
+    <section class="section-container section-divider">
+      <div class="section-title">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-6l-2-2H5a2 2 0 0 0-2 2z" fill="#5b5ee8"/>
+        </svg>
+        <span>打开文档</span>
+      </div>
+
+      <div class="open-grid">
+        <!-- 本地文件卡片 -->
+        <div class="open-box">
+          <div class="box-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <span>本地文件</span>
+          </div>
+          <div class="dropzone" id="dropzone">
+            <div class="dropzone-icon">
+              <svg viewBox="0 0 24 24">
+                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+              </svg>
+            </div>
+            <div class="dropzone-text">点击选择文件或拖拽文件到此处</div>
+            <input type="file" id="file-input" style="display: none;" accept=".docx,.xlsx,.pptx,.pdf,.doc,.xls,.ppt,.odt,.ods,.odp,.txt,.rtf">
+            <button class="btn-primary" id="btn-select-file">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/>
+              </svg>
+              <span>选择文件</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 网络链接卡片 -->
+        <div class="open-box">
+          <div class="box-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+            </svg>
+            <span>网络链接</span>
+          </div>
+          <div class="url-content-wrap">
+            <input type="text" id="url-input" class="url-input" placeholder="输入文档的网络链接地址...">
+            <div>
+              <button class="btn-primary" id="btn-open-url">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                  <polyline points="15 3 21 3 21 9"/>
+                  <line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+                <span>打开链接</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. 最近文件栏目 -->
+    <section class="section-container section-divider">
+      <div class="section-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#5b5ee8" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        <span>最近文件</span>
+      </div>
+
+      <div class="recent-list" id="recent-list">
+        <!-- 动态由 app.js 渲染 -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 全屏 ONLYOFFICE 编辑器容器 -->
+  <div class="editor-container" id="editor-container">
+    <div class="editor-navbar">
+      <div class="editor-nav-left">
+        <button class="btn-back" id="btn-back">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+          <span>返回文档管理器</span>
+        </button>
+        <span class="editor-doc-title" id="editor-doc-title">文档.docx</span>
+      </div>
+
+      <div class="editor-nav-center">
+        <div class="save-status-badge" id="save-status">🟢 已保存</div>
+      </div>
+
+      <div class="editor-nav-right">
+        <button class="btn-editor-action" id="btn-save">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+          <span>保存</span>
+        </button>
+        <button class="btn-editor-action" id="btn-download">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <span>导出下载</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ONLYOFFICE 挂载占位容器 -->
+    <div id="editor-placeholder"></div>
+  </div>
+
+  <!-- 全屏加载遮罩层 -->
+  <div class="loading-mask" id="loading-mask">
+    <div class="spinner"></div>
+    <div class="loading-title" id="loading-title">正在加载...</div>
+    <div class="loading-subtitle" id="loading-subtitle">基于原生 DecompressionStream 极速流式解压</div>
+  </div>
+
+  <!-- Toast 提示框 -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ONLYOFFICE 预加载 Iframe（提升冷启动性能） -->
+  <iframe style="display:none;width:0;height:0;border:0;" src="./v9.3.0.24-1/web-apps/apps/api/documents/preload.html"></iframe>
+
+  <!-- 引入 ONLYOFFICE DocsAPI -->
+  <script src="./v9.3.0.24-1/web-apps/apps/api/documents/api.js"></script>
+
+  <!-- 启动业务主应用 -->
+  <script type="module" src="./assets/js/app.js"></script>
+
+</body>
+</html>
