@@ -162,3 +162,46 @@ OnlyofficeCompressed/
   npx serve .
   ```
 启动后访问 `http://127.0.0.1:8080` 即可在本地流畅体验。
+
+---
+
+## 🙏 致谢与开源声明
+
+本项目的办公套件内核、格式转换引擎与前端运行时，均建立在下列开源项目之上，谨此致谢。
+
+### 1. ONLYOFFICE —— 办公套件本体
+
+| 项目 | 本项目中的对应部分 | 许可证 |
+| --- | --- | --- |
+| [ONLYOFFICE/web-apps](https://github.com/ONLYOFFICE/web-apps) | 编辑器前端外壳，对应 `v9.3.0.24-1/web-apps`（版权归 Ascensio System SIA） | AGPL-3.0（另含 Section 7(b)/(e) 附加条款） |
+| [ONLYOFFICE/sdkjs](https://github.com/ONLYOFFICE/sdkjs) | 文档排版 / 渲染引擎，对应 `v9.3.0.24-1/sdkjs/*/sdk-all.js` 及字体子系统 | AGPL-3.0 |
+| [ONLYOFFICE/core](https://github.com/ONLYOFFICE/core)（x2t） | 文档格式互转内核，对应 `x2t/x2t.wasm.gz` | AGPL-3.0 |
+| [ONLYOFFICE DocumentServer](https://github.com/ONLYOFFICE/DocumentServer) | 原版前后端整体工程；本项目只取其前端部分做纯浏览器运行改造 | AGPL-3.0 |
+
+> 编辑器界面的图标、插图等 GUI 素材采用 [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) 许可。
+
+### 2. ZIZIYI Office —— 纯前端虚拟文档服务器思路的先行者
+
+- 仓库：[baotlake/office-website](https://github.com/baotlake/office-website) ｜ 线上：[office.ziziyi.com](https://office.ziziyi.com/)
+- 致谢理由：本项目「浏览器内虚拟文档服务器」的整体架构——由 `EditorServer` 充当伪服务端、`MockSocket` 模拟长连接协议、在 iframe 内用 XHR / Fetch 代理拦截编辑器请求、以及编辑器资源的离线化——参考并移植自该项目；本仓库在其基础上进一步完成了资源 gzip 极限压缩与全量自托管。
+
+### 3. 随发行版一同打包的前端依赖
+
+| 项目 | 版本 | 许可证 |
+| --- | --- | --- |
+| [jQuery](https://jquery.com/) | 3.7.1 | MIT |
+| [Bootstrap](https://getbootstrap.com/) | 3.4.1（CSS） | MIT |
+| [RequireJS](https://requirejs.org/) | — | MIT |
+| [Socket.IO](https://socket.io/)（客户端） | 4.5.3 | MIT |
+| [XRegExp](https://xregexp.com/) | — | MIT |
+| [Monaco Editor](https://microsoft.github.io/monaco-editor/) | — | MIT |
+| [perfect-scrollbar](https://github.com/mdbootstrap/perfect-scrollbar) | — | MIT |
+| [Emscripten](https://emscripten.org/) | — | MIT / University of Illinois（x2t 与排版引擎 WASM 的构建工具链） |
+
+`v9.3.0.24-1/fonts/` 下的字体文件随 ONLYOFFICE 发行版分发，各字体族仍保留其自身授权。
+
+### 4. 声明
+
+- 本项目为**非官方**的第三方改造版，并非 ONLYOFFICE 官方发行版；所有上游代码与素材的版权归原作者所有。
+- 商业用途请向 [ONLYOFFICE 官方](https://www.onlyoffice.com/) 采购授权，并遵守文首《严禁滥用与免责声明》。
+- 若上游作者认为署名方式需要调整，欢迎提 Issue 指正。
