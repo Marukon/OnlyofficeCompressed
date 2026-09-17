@@ -176,6 +176,14 @@ def test_type(doc_type):
         send_cmd("Page.enable")
         send_cmd("Log.enable")
         send_cmd("Network.enable")
+        # 模拟非 100% 的显示器缩放：编辑器会按 devicePixelRatio 去取
+        # "<name>@1.25x.png" 这类高 DPI 变体，只测 DPR=1 会漏掉整类 404。
+        send_cmd("Emulation.setDeviceMetricsOverride", {
+            "width": 1600,
+            "height": 1000,
+            "deviceScaleFactor": float(os.environ.get('DPR', '1.25')),
+            "mobile": False,
+        })
 
         external_requests = []
         failed_requests = []

@@ -60,6 +60,58 @@ missing_images = [
 for path in missing_images:
     downloads.append((path, BASE_CDN + path))
 
+# 3) Non-1x image sets that are still missing at base size
+extra_base_files = [
+    'sdkjs/common/Images/fonts_thumbnail.png.bin',
+    'web-apps/apps/documenteditor/main/resources/img/iconshuge.png',
+]
+for path in extra_base_files:
+    downloads.append((path, BASE_CDN + path))
+
+
+# 4) HiDPI variants.
+#    The editor builds image URLs as "<name>@<devicePixelRatio>x.<ext>", so a
+#    display scaled to 125% / 150% / 175% / 200% requests these files instead of
+#    the 1x ones. Only the 1x files used to be shipped, which produced a lot of
+#    404s (and broke the font thumbnail tiles) on scaled displays.
+def hidpi_path(path, ratio):
+    directory, filename = path.rsplit('/', 1) if '/' in path else ('', path)
+    dot = filename.index('.')
+    name = f'{filename[:dot]}@{ratio}x{filename[dot:]}'
+    return f'{directory}/{name}' if directory else name
+
+
+HIDPI_RATIOS = ['1.25', '1.5', '1.75', '2']
+HIDPI_BASES = [
+    'sdkjs/common/Images/fonts_thumbnail.png.bin',
+    'sdkjs/common/Images/fonts_thumbnail_ea.png.bin',
+    'sdkjs/common/Images/icons/anchor.png',
+    'sdkjs/common/Images/content_controls/img.png',
+    'sdkjs/common/Images/content_controls/img_active.png',
+    'sdkjs/common/Images/content_controls/toc.png',
+    'sdkjs/common/Images/content_controls/toc_active.png',
+    'sdkjs/common/Images/content_controls/signature.png',
+    'sdkjs/common/Images/placeholders/image.png',
+    'sdkjs/common/Images/placeholders/image_url.png',
+    'sdkjs/common/Images/placeholders/table.png',
+    'sdkjs/common/Images/placeholders/table_active.png',
+    'sdkjs/common/Images/placeholders/chart.png',
+    'sdkjs/common/Images/placeholders/chart_active.png',
+    'sdkjs/common/Images/placeholders/audio.png',
+    'sdkjs/common/Images/placeholders/video.png',
+    'sdkjs/common/Images/placeholders/smartart.png',
+    'sdkjs/common/Images/placeholders/smartart_active.png',
+] + [
+    f'web-apps/apps/{app}/main/resources/img/{name}.png'
+    for app in ('documenteditor', 'spreadsheeteditor', 'presentationeditor',
+                'pdfeditor', 'visioeditor')
+    for name in ('iconssmall', 'iconsbig', 'iconshuge')
+]
+for base in HIDPI_BASES:
+    for ratio in HIDPI_RATIOS:
+        path = hidpi_path(base, ratio)
+        downloads.append((path, BASE_CDN + path))
+
 print(f"[INFO] Total files to download: {len(downloads)}")
 
 # Download
