@@ -108,8 +108,10 @@ class SimpleWebSocket:
         except:
             pass
 
-class ReusableTCPServer(socketserver.TCPServer):
+class ReusableTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    # 编辑器并行加载上百个资源，单线程服务器会导致随机超时，必须多线程。
     allow_reuse_address = True
+    daemon_threads = True
 
 def start_http_server():
     os.chdir(ROOT_DIR)

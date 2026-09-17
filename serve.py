@@ -17,8 +17,11 @@ class CORSHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
         super().end_headers()
 
-class ReusableTCPServer(socketserver.TCPServer):
+class ReusableTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    # 编辑器会并行加载上百个资源（sdkjs / 字体 / wasm），单线程服务器会把请求串行化，
+    # 造成随机超时（表现为资源加载失败或文档迟迟不渲染），因此必须多线程。
     allow_reuse_address = True
+    daemon_threads = True
 
 if __name__ == '__main__':
     print(f"==================================================")

@@ -12,9 +12,9 @@ import urllib.request
 
 CHROME_PATH = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
 PORT = 8089
-CDP_PORT = 9223
+CDP_PORT = 9224
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-USER_DATA_DIR = os.path.join(os.environ.get('TEMP', r'C:\Windows\Temp'), 'chrome_test_profile_all_types')
+USER_DATA_DIR = os.path.join(os.environ.get('TEMP', r'C:\Windows\Temp'), 'chrome_test_profile_zero_ext')
 
 class SimpleWebSocket:
     def __init__(self, ws_url):
@@ -109,7 +109,8 @@ class SimpleWebSocket:
             pass
 
 class ReusableTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
-    # 编辑器并行加载上百个资源，单线程服务器会导致随机超时，必须多线程。
+    # 编辑器会并行加载上百个资源，单线程服务器会把请求串行化，
+    # 造成随机超时（表现为 “Failed to fetch” 或文档迟迟不渲染），因此必须多线程。
     allow_reuse_address = True
     daemon_threads = True
 
@@ -130,7 +131,7 @@ def start_http_server():
     return server
 
 def test_type(doc_type):
-    print(f"\n{'='*20} Testing Document Type: {doc_type} {'='*20}")
+    print(f"\n==================== Testing {doc_type.upper()} ====================")
     cmd = [
         CHROME_PATH,
         f"--remote-debugging-port={CDP_PORT}",
@@ -160,7 +161,7 @@ def test_type(doc_type):
 
         if not ws_url:
             print(f"[!] Could not connect to Chrome CDP for {doc_type}")
-            return False
+            return False, [], []
 
         ws = SimpleWebSocket(ws_url)
         msg_id = 1
@@ -168,89 +169,91 @@ def test_type(doc_type):
             nonlocal msg_id
             m_id = msg_id
             msg_id += 1
-            ws.send({"id": m_id, "method": method, "params": params or {}})
+            ws.send({'id': m_id, 'method': method, 'params': params or {}})
             return m_id
 
         send_cmd("Runtime.enable")
         send_cmd("Page.enable")
         send_cmd("Log.enable")
+        send_cmd("Network.enable")
 
-        logs = []
-        errors = []
+        external_requests = []
+        failed_requests = []
         rendered = False
         start_time = time.time()
         clicked = False
 
-        while time.time() - start_time < 20:
-            msg = ws.recv(timeout=0.5)
+        while time.time() - start_time < 25:
+            msg = ws.recv(timeout=0.4)
             if not msg:
-                if time.time() - start_time > 5 and not clicked:
+                if time.time() - start_time > 4 and not clicked:
                     clicked = True
-                    print(f"[*] Triggering click on card: [data-type='{doc_type}'] ...")
+                    print(f"[*] Clicking [{doc_type}] card...")
                     send_cmd("Runtime.evaluate", {
                         "expression": f"document.querySelector('[data-type=\"{doc_type}\"]').click();"
                     })
                 continue
 
             method = msg.get('method')
-            if method == 'Runtime.consoleAPICalled':
+            if method == 'Network.requestWillBeSent':
+                req = msg.get('params', {}).get('request', {})
+                url = req.get('url', '')
+                if not url.startswith(f"http://127.0.0.1:{PORT}") and not url.startswith('data:') and not url.startswith('blob:'):
+                    print(f"  [EXTERNAL REQUEST DETECTED!] {url}")
+                    external_requests.append(url)
+            elif method == 'Network.responseReceived':
+                resp = msg.get('params', {}).get('response', {})
+                status = resp.get('status')
+                url = resp.get('url', '')
+                if status >= 400:
+                    print(f"  [HTTP {status}] {url}")
+                    failed_requests.append((status, url))
+            elif method == 'Runtime.consoleAPICalled':
                 params = msg.get('params', {})
-                c_type = params.get('type')
                 args = [str(a.get('value', a.get('description', ''))) for a in params.get('args', [])]
-                text = " ".join(args)
-                logs.append(f"[{c_type}] {text}")
-                if "文档渲染完毕" in text:
+                text = ' '.join(args)
+                if '文档渲染完毕' in text:
                     rendered = True
                     print(f"  [+] SUCCESS: {text}")
-                if c_type == 'error':
-                    errors.append(text)
-                    print(f"  [ERROR] {text}")
-            elif method == 'Runtime.exceptionThrown':
-                details = msg.get('params', {}).get('exceptionDetails', {})
-                text = details.get('text', '') + ' ' + str(details.get('exception', {}).get('description', ''))
-                errors.append(text)
-                print(f"  [EXCEPTION] {text}")
+                elif 'error' == params.get('type'):
+                    print(f"  [CONSOLE.ERROR] {text}")
 
-            if rendered and time.time() - start_time > 10:
+            if rendered and time.time() - start_time > 8:
                 break
-
-        # Save screenshot
-        s_id = send_cmd("Page.captureScreenshot", {"format": "png"})
-        scr_data = None
-        for _ in range(10):
-            m = ws.recv(timeout=1.0)
-            if m and m.get('id') == s_id:
-                scr_data = m.get('result', {}).get('data')
-                break
-
-        if scr_data:
-            scr_path = os.path.join(ROOT_DIR, "scripts", f"screenshot_{doc_type}.png")
-            with open(scr_path, "wb") as f:
-                f.write(base64.b64decode(scr_data))
-            print(f"[+] Screenshot saved to: {scr_path}")
 
         ws.close()
-        print(f"[*] {doc_type} result: rendered={rendered}, errors={len(errors)}")
-        return rendered and len(errors) == 0
+        return rendered, external_requests, failed_requests
     finally:
         proc.terminate()
         proc.wait()
 
 def main():
-    print(f"[*] Starting server on port {PORT}...")
+    print(f"[*] Starting local HTTP server at http://127.0.0.1:{PORT} ...")
     server = start_http_server()
     time.sleep(1)
 
-    results = {}
+    all_ok = True
+    summary = {}
     for t in ['docx', 'xlsx', 'pptx', 'pdf']:
-        results[t] = test_type(t)
-        time.sleep(1)
+        rendered, ext_reqs, failed_reqs = test_type(t)
+        ok = rendered and len(ext_reqs) == 0 and len(failed_reqs) == 0
+        summary[t] = {
+            'rendered': rendered,
+            'external_requests': len(ext_reqs),
+            'failed_requests': len(failed_reqs)
+        }
+        if not ok:
+            all_ok = False
 
-    print("\n" + "="*50)
-    print("ALL TESTS COMPLETED:")
-    for t, ok in results.items():
-        print(f" - {t.upper()}: {'PASSED' if ok else 'FAILED'}")
-    print("="*50)
+    print("\n" + "="*60)
+    print("SUMMARY TEST RESULTS:")
+    for t, res in summary.items():
+        print(f" - {t.upper()}: Rendered={res['rendered']}, ExternalReqs={res['external_requests']}, FailedReqs={res['failed_requests']}")
+    print("="*60)
+    if all_ok:
+        print("[SUCCESS] 100% LOCALIZED! ZERO external requests and all documents rendered successfully!")
+    else:
+        print("[FAILURE] Some tests failed or made external requests.")
 
 if __name__ == '__main__':
     main()

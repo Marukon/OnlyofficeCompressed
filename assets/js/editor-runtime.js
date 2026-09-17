@@ -63,6 +63,77 @@ function getBlobUrl(data, type = 'application/octet-stream') {
 }
 
 /**
+ * 将二进制数据逐字节转换为字符串（等价于 ISO-8859-1 解码）。
+ * ONLYOFFICE 的 PDF 表单探测逻辑用 XHR + overrideMimeType('text/plain; charset=iso-8859-1')
+ * 读取文件头部字节并做签名匹配，因此这里必须保证 0x80 - 0xFF 不被 UTF-8 破坏。
+ */
+function toBinaryString(bytes) {
+  let result = '';
+  const CHUNK = 0x8000;
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    result += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+  }
+  return result;
+}
+
+/**
+ * 判定文档是否为“扩展 PDF 表单”（ONLYOFFICE 表单签名）。
+ *
+ * 该逻辑与 web-apps/apps/common/index.html 中的 isExtendedPDFFile() 完全一致：
+ * 原生 ONLYOFFICE 在打开 PDF 前，会由 common 引导帧向服务端发起
+ * POST /downloadfile/{key}（Range: bytes=0-300）来探测表单，
+ * 拿到前若干字节后再按下面的规则做签名匹配。
+ * 纯静态部署没有该服务端接口，因此在本地对原始文档字节做同样的判定，
+ * 通过 document.isForm 直接告知编辑器，既保留表单文档的正确打开方式，
+ * 也避免产生任何额外网络请求。
+ */
+export function isExtendedPdfFile(source) {
+  if (!source || !source.length) {
+    return false;
+  }
+
+  // 服务端回源时只取前 300 字节，本地判定保持一致
+  const text = toBinaryString(source.subarray(0, 300));
+
+  const indexFirst = text.indexOf('%\xCD\xCA\xD2\xA9\x0D');
+  if (indexFirst === -1) {
+    return false;
+  }
+
+  let pFirst = text.substring(indexFirst + 6);
+
+  if (!(pFirst.lastIndexOf('1 0 obj\x0A<<\x0A', 0) === 0)) {
+    return false;
+  }
+
+  pFirst = pFirst.substring(11);
+
+  const signature = 'ONLYOFFICEFORM';
+  const indexStream = pFirst.indexOf('stream\x0D\x0A');
+  const indexMeta = pFirst.indexOf(signature);
+
+  if (indexStream === -1 || indexMeta === -1 || indexStream < indexMeta) {
+    return false;
+  }
+
+  let pMeta = pFirst.substring(indexMeta + signature.length + 3);
+
+  let indexMetaLast = pMeta.indexOf(' ');
+  if (indexMetaLast === -1) {
+    return false;
+  }
+
+  pMeta = pMeta.substring(indexMetaLast + 1);
+
+  indexMetaLast = pMeta.indexOf(' ');
+  if (indexMetaLast === -1) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
  * Lightweight EventEmitter for in-browser messaging
  */
 export class SimpleEventEmitter {
@@ -540,6 +611,9 @@ export class EditorServer {
     this.fsMap = new Map();
     this.urlsMap = new Map();
 
+    // 原始文档二进制（未经 x2t 转换），用于本地判定扩展 PDF 表单
+    this.sourceData = null;
+
     this.downloadId = '';
     this.downloadParts = [];
 
@@ -604,6 +678,7 @@ export class EditorServer {
     }
 
     this._cleanupUrls();
+    this.sourceData = binData;
     this.fsMap.set('Editor.bin', binData);
     this.urlsMap.set('Editor.bin', getBlobUrl(binData));
     this.loadPromise = Promise.resolve();
@@ -660,6 +735,8 @@ export class EditorServer {
   }
 
   async _loadDocument(buffer, fileType) {
+    this.sourceData = new Uint8Array(buffer);
+
     let output = null;
     let media = {};
 

@@ -12,6 +12,7 @@ import {
   createFetchProxy,
   getDocumentType,
   getFileExt,
+  isExtendedPdfFile,
   defaultConverter,
 } from './editor-runtime.js';
 import { emptyDocx, emptyPdf, emptyPptx, emptyXlsx } from './empty.js';
@@ -491,6 +492,11 @@ class AppManager {
         key: doc.key,
         title: doc.title,
         url: doc.url,
+        // PDF 必须先确定 isForm：原生实现会加载 common 引导帧，
+        // 再向服务端 POST /downloadfile/{key} 探测文档是否为扩展 PDF 表单。
+        // 静态离线环境没有该接口，这里用相同的签名规则在本地判定，
+        // 既保证表单类 PDF 仍进入表单编辑器，也彻底消除该额外请求。
+        ...(documentType === 'pdf' ? { isForm: isExtendedPdfFile(this.server.sourceData) } : {}),
         permissions: {
           edit: doc.fileType !== 'pdf',
           chat: false,
@@ -512,6 +518,11 @@ class AppManager {
         },
         customization: {
           uiTheme: 'default',
+          // 编辑器默认的“帮助/反馈”入口会跳转到 onlyoffice.com（helpcenter / feedback / support），
+          // 本项目全部资源与页面都走自己的域名，这里关闭这两个纯外部跳转的入口。
+          // 需要恢复时删掉下面两行即可。
+          help: false,
+          feedback: false,
           features: {
             spellcheck: {
               change: false,
@@ -538,9 +549,9 @@ class AppManager {
           }
         },
         onError: (err) => {
-          console.error('[AppManager] 编辑器报错:', err);
+          console.error('[AppManager] 编辑器报错详情:', JSON.stringify(err), err?.data, err?.message, err?.description);
           this.hideLoading();
-          this.showToast('编辑器提示: ' + (err.data || ''));
+          this.showToast('编辑器提示: ' + (err?.data || ''));
         },
       },
       type: 'desktop',

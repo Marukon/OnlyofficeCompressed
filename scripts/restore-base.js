@@ -1,8 +1,23 @@
+/**
+ * 把 <base href> 从站点相对地址还原为“外部资源服务器绝对地址”。
+ *
+ * 项目已完全本地化（base href 一律为 /v9.3.0.24-1/...，不依赖任何外部域名），
+ * 因此这里不再内置任何上游域名：必须显式给出来源地址才会执行，避免误把
+ * 编辑器资源重新指回第三方 CDN。
+ *
+ *   ASSET_SOURCE_BASE=https://cdn.example.com/v9.3.0.24-1 node scripts/restore-base.js
+ */
 const fs = require('fs');
 const path = require('path');
 
+const SOURCE_BASE = process.env.ASSET_SOURCE_BASE;
+if (!SOURCE_BASE) {
+  console.error('ASSET_SOURCE_BASE is required, e.g. https://cdn.example.com/v9.3.0.24-1');
+  process.exit(1);
+}
+
 const targetStr = '<base href="/v9.3.0.24-1/';
-const replaceStr = '<base href="https://office-editor.ziziyi.com/v9.3.0.24-1/';
+const replaceStr = '<base href="' + SOURCE_BASE.replace(/\/+$/, '') + '/';
 
 let count = 0;
 
