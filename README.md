@@ -1,4 +1,4 @@
-# ONLYOFFICE Compressed - 纯前端极致离线办公套件 (EdgeOne Pages 适配版)
+# ONLYOFFICE Compressed - 纯前端极致离线办公套件 (Pages 适配版)
 
 > 本项目将 ONLYOFFICE 核心排版引擎完全移至前端浏览器运行，并采用 **Gzip Level 9 预压缩 + 浏览器原生 `DecompressionStream` 内存流式解压** 方案，将原本 65.6 MB 的 `x2t.wasm` 极致压缩至 **13.25 MB**（压缩率达 79.8%），彻底打破腾讯云 EdgeOne Pages、Cloudflare Pages、GitHub Pages 等静态托管平台单文件不超过 25MB 的硬性限制！
 
